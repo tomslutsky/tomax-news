@@ -1,8 +1,10 @@
+import { Dialog } from "@headlessui/react";
 import { json, type LoaderArgs } from "@remix-run/node";
 import { useFetcher, useLoaderData, useSearchParams } from "@remix-run/react";
 import clsx from "clsx";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { z } from "zod";
+import { ArticleComponent } from "~/components/article";
 import { NewsItem } from "~/components/news-item";
 import { InfiniteScroller } from "~/lib/infinite-scroller";
 import { LoadingIndicator } from "~/lib/loading-indicator";
@@ -53,6 +55,13 @@ export let headers = ({ loaderHeaders }: { loaderHeaders: Headers }) => {
 export default function Index() {
   const routeData = useLoaderData<typeof loader>();
   const [articles, setArticles] = useState(routeData.articles);
+  const [selectedArticleTitle, setSelectedArticleTitle] = useState<
+    string | undefined
+  >();
+
+  const selectedArticle = articles.find(
+    (article) => article.title === selectedArticleTitle
+  );
 
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -159,7 +168,15 @@ export default function Index() {
             {articles.map((article) => {
               return (
                 <li key={article?.title}>
-                  <NewsItem {...article} />
+                  <button
+                    type="button"
+                    className="text-left"
+                    onClick={() => {
+                      setSelectedArticleTitle(article?.title);
+                    }}
+                  >
+                    <NewsItem {...article} />
+                  </button>
                 </li>
               );
             })}
@@ -173,6 +190,43 @@ export default function Index() {
 
         {fetcher.state === "loading" ? <LoadingIndicator /> : null}
       </main>
+      <Dialog
+        open={selectedArticleTitle !== undefined}
+        onClose={() => setSelectedArticleTitle(undefined)}
+        className="fixed inset-0 z-10"
+      >
+        <Dialog.Panel className=" bg-white h-[100vh]">
+          <button
+            onClick={() => setSelectedArticleTitle(undefined)}
+            className="flex items-center gap-2 mb-2"
+          >
+            <ArrowBackIcon className="w-8 h-8" /> Back
+          </button>
+          <div className="overflow-y-auto max-h-full p-4">
+            <ArticleComponent
+              {...selectedArticle!}
+              onClose={() => setSelectedArticleTitle(undefined)}
+            />
+          </div>
+        </Dialog.Panel>
+      </Dialog>
     </div>
+  );
+}
+
+function ArrowBackIcon(props: React.ComponentProps<"svg">) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      width="24"
+      height="24"
+      {...props}
+    >
+      <path
+        fill="currentColor"
+        d="M16.59 16.59L12 12l4.59-4.59L14 6l-6 6 6 6 1.41-1.41z"
+      />
+    </svg>
   );
 }
